@@ -265,6 +265,8 @@ export default {
         url: "https://api.scratch.mit.edu/proxy/featured",
       }).then((response) => {
         if (response.status == 200) {
+          response.data = JSON.parse(response.data);
+          console.log("FEATURED", response.data.community_featured_projects);
           this.featuredProjects = response.data.community_featured_projects;
           this.lovedProjects = response.data.community_most_loved_projects;
           this.remixedProjects = response.data.community_most_remixed_projects;
