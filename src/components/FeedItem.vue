@@ -78,8 +78,7 @@ export default defineComponent({
       imageLoading: true,
     };
   },
-  created() {
-  },
+  created() {},
   methods: {
     visit(i) {
       const projectLinks = [
@@ -92,8 +91,8 @@ export default defineComponent({
       const studioLinks = [
         "becomeownerstudio",
         "becomecurator",
-        "followStudio"
-      ]
+        "followStudio",
+      ];
       const userLinks = ["followuser"];
       if (projectLinks.includes(i.type)) {
         this.$emit("openProject", i.project_id);
@@ -101,9 +100,9 @@ export default defineComponent({
         this.$emit("openUser", i.followed_username);
       } else if (studioLinks.includes(i.type)) {
         Browser.open({
-        url: `https://scratch.mit.edu/studios/${i.gallery_id}`,
-        toolbarColor: "#4E97FF",
-      });
+          url: `https://scratch.mit.edu/studios/${i.gallery_id}`,
+          toolbarColor: "#4E97FF",
+        });
       }
     },
     openUser(i) {

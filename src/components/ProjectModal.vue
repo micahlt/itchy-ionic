@@ -127,7 +127,6 @@
 </template>
 
 <script>
-import { Http } from "@capacitor-community/http";
 import { Share } from "@capacitor/share";
 import { StatusBar } from "@capacitor/status-bar";
 const utils = require("../utils.js");
@@ -150,6 +149,7 @@ import {
   IonFab,
   IonFabList,
   IonFabButton,
+  isPlatform,
 } from "@ionic/vue";
 import {
   addOutline,
@@ -179,9 +179,11 @@ export default defineComponent({
     id: Number,
   },
   data() {
-    StatusBar.setBackgroundColor({
-      color: "#1f1f1f",
-    });
+    if (isPlatform("android")) {
+      StatusBar.setBackgroundColor({
+        color: "#1f1f1f",
+      });
+    }
     return {
       utils: utils,
       session: JSON.parse(window.localStorage.getItem("session"))
@@ -273,64 +275,74 @@ export default defineComponent({
       this.selected = item;
     },
     loadProject() {
-      Http.request({
-        method: "GET",
-        url: `https://api.scratch.mit.edu/projects/${this.id}`,
-      }).then((response) => {
-        this.error.code = response.status;
-        if (response.status == 404) {
-          this.error.message =
-            "We couldn't find this project.\nMaybe it's not shared?";
-          this.error.show = true;
-          this.title = "Error";
-        } else if (response.status == 500) {
-          this.error.message = "Scratch's servers are having trouble.";
-          this.error.show = true;
-          this.title = "Error";
+      fetch(`https://api.scratch.mit.edu/projects/${this.id}`).then(
+        async (response) => {
+          this.error.code = response.status;
+          if (response.status == 404) {
+            this.error.message =
+              "We couldn't find this project.\nMaybe it's not shared?";
+            this.error.show = true;
+            this.title = "Error";
+          } else if (response.status == 500) {
+            this.error.message = "Scratch's servers are having trouble.";
+            this.error.show = true;
+            this.title = "Error";
+          }
+          const data = await response.json();
+          this.instructions = utils.prepareText(data.instructions);
+          this.credits = utils.prepareText(data.description);
+          this.pfp = data.author.profile.images["90x90"];
+          this.title = data.title;
+          this.author = data.author.username;
+          this.stats = data.stats;
+          this.remix = data.remix;
+          this.history = data.history;
+          if (this.session) {
+            fetch(
+              `https://api.scratch.mit.edu/users/${this.author}/projects/${this.id}/views`,
+              {
+                method: "POST",
+                headers: {
+                  "x-token": this.session.token,
+                },
+              }
+            );
+          }
         }
-        this.instructions = utils.prepareText(response.data.instructions);
-        this.credits = utils.prepareText(response.data.description);
-        this.pfp = response.data.author.profile.images["90x90"];
-        this.title = response.data.title;
-        this.author = response.data.author.username;
-        this.stats = response.data.stats;
-        this.remix = response.data.remix;
-        this.history = response.data.history;
-        if (this.session) {
-          Http.request({
-            method: "POST",
-            url: `https://api.scratch.mit.edu/users/${this.author}/projects/${this.id}/views`,
+      );
+      if (this.session) {
+        fetch(
+          `https://api.scratch.mit.edu/projects/${this.id}/favorites/user/${this.session.username}`,
+          {
+            method: "GET",
             headers: {
               "x-token": this.session.token,
             },
+          }
+        )
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.userFavorite) {
+              this.favIcon = star;
+              this.favText = "Unfavorite";
+            }
           });
-        }
-      });
-      if (this.session) {
-        Http.request({
-          method: "GET",
-          url: `https://api.scratch.mit.edu/projects/${this.id}/favorites/user/${this.session.username}`,
-          headers: {
-            "x-token": this.session.token,
-          },
-        }).then((response) => {
-          if (response.data.userFavorite) {
-            this.favIcon = star;
-            this.favText = "Unfavorite";
+        fetch(
+          `https://api.scratch.mit.edu/projects/${this.id}/loves/user/${this.session.username}`,
+          {
+            method: "GET",
+            headers: {
+              "x-token": this.session.token,
+            },
           }
-        });
-        Http.request({
-          method: "GET",
-          url: `https://api.scratch.mit.edu/projects/${this.id}/loves/user/${this.session.username}`,
-          headers: {
-            "x-token": this.session.token,
-          },
-        }).then((response) => {
-          if (response.data.userLove) {
-            this.loveIcon = heart;
-            this.loveText = "Unlove";
-          }
-        });
+        )
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.userLove) {
+              this.loveIcon = heart;
+              this.loveText = "Unlove";
+            }
+          });
       }
     },
     async openAuthor() {
@@ -355,82 +367,98 @@ export default defineComponent({
       });
     },
     favorite() {
-      Http.request({
-        method: "GET",
-        url: `https://api.scratch.mit.edu/projects/${this.id}/favorites/user/${this.session.username}`,
-        headers: {
-          "x-token": this.session.token,
-        },
-      }).then((response) => {
-        if (response.data.userFavorite) {
-          Http.request({
-            method: "DELETE",
-            url: `https://api.scratch.mit.edu/projects/${this.id}/favorites/user/${this.session.username}`,
-            headers: {
-              "x-token": this.session.token,
-            },
-          }).then((res) => {
-            if (res.status == 200) {
-              this.favIcon = starOutline;
-              this.favText = "Favorite";
-              this.stats.favorites--;
-            }
-          });
-        } else {
-          Http.request({
-            method: "POST",
-            url: `https://api.scratch.mit.edu/projects/${this.id}/favorites/user/${this.session.username}`,
-            headers: {
-              "x-token": this.session.token,
-            },
-          }).then((res) => {
-            if (res.status == 200) {
-              this.favIcon = star;
-              this.favText = "Unfavorite";
-              this.stats.favorites++;
-            }
-          });
+      fetch(
+        `https://api.scratch.mit.edu/projects/${this.id}/favorites/user/${this.session.username}`,
+        {
+          method: "GET",
+          headers: {
+            "x-token": this.session.token,
+          },
         }
-      });
+      )
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.userFavorite) {
+            fetch(
+              `https://api.scratch.mit.edu/projects/${this.id}/favorites/user/${this.session.username}`,
+              {
+                method: "DELETE",
+                headers: {
+                  "x-token": this.session.token,
+                },
+              }
+            ).then((res) => {
+              if (res.status == 200) {
+                this.favIcon = starOutline;
+                this.favText = "Favorite";
+                this.stats.favorites--;
+              }
+            });
+          } else {
+            fetch(
+              `https://api.scratch.mit.edu/projects/${this.id}/favorites/user/${this.session.username}`,
+              {
+                method: "POST",
+                headers: {
+                  "x-token": this.session.token,
+                },
+              }
+            ).then((res) => {
+              if (res.status == 200) {
+                this.favIcon = star;
+                this.favText = "Unfavorite";
+                this.stats.favorites++;
+              }
+            });
+          }
+        });
     },
     love() {
-      Http.request({
-        method: "GET",
-        url: `https://api.scratch.mit.edu/projects/${this.id}/loves/user/${this.session.username}`,
-        headers: {
-          "x-token": this.session.token,
-        },
-      }).then((response) => {
-        if (response.data.userLove) {
-          Http.request({
-            method: "DELETE",
-            url: `https://api.scratch.mit.edu/projects/${this.id}/loves/user/${this.session.username}`,
-            headers: {
-              "x-token": this.session.token,
-            },
-          }).then((res) => {
-            if (res.status == 200) {
-              this.loveIcon = heartOutline;
-              this.loveText = "Love";
-              this.stats.loves--;
-            }
-          });
-        } else {
-          Http.request({
-            method: "POST",
-            url: `https://api.scratch.mit.edu/projects/${this.id}/loves/user/${this.session.username}`,
-            headers: {
-              "x-token": this.session.token,
-            },
-          }).then((res) => {
-            if (res.status == 200) {
-              this.loveIcon = heart;
-              this.loveText = "Unlove";
-              this.stats.loves++;
-            }
-          });
+      fetch(
+        `https://api.scratch.mit.edu/projects/${this.id}/loves/user/${this.session.username}`,
+        {
+          method: "GET",
+          headers: {
+            "x-token": this.session.token,
+          },
         }
-      });
+      )
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.userLove) {
+            fetch(
+              `https://api.scratch.mit.edu/projects/${this.id}/loves/user/${this.session.username}`,
+              {
+                method: "DELETE",
+                headers: {
+                  "x-token": this.session.token,
+                },
+              }
+            ).then((res) => {
+              if (res.status == 200) {
+                this.loveIcon = heartOutline;
+                this.loveText = "Love";
+                this.stats.loves--;
+              }
+            });
+          } else {
+            fetch(
+              `https://api.scratch.mit.edu/projects/${this.id}/loves/user/${this.session.username}`,
+              {
+                method: "POST",
+                headers: {
+                  "x-token": this.session.token,
+                },
+              }
+            ).then((res) => {
+              if (res.status == 200) {
+                this.loveIcon = heart;
+                this.loveText = "Unlove";
+                this.stats.loves++;
+              }
+            });
+          }
+        });
     },
     async openComments() {
       const modal = await modalController.create({
@@ -460,8 +488,10 @@ ion-fab-button[data-desc]::after {
   padding: 9px;
   border-radius: 5px;
   color: var(--ion-text-color);
-  box-shadow: 0 3px 5px -1px rgba(0, 0, 0, 0.2),
-    0 6px 10px 0 rgba(0, 0, 0, 0.14), 0 1px 18px 0 rgba(0, 0, 0, 0.12);
+  box-shadow:
+    0 3px 5px -1px rgba(0, 0, 0, 0.2),
+    0 6px 10px 0 rgba(0, 0, 0, 0.14),
+    0 1px 18px 0 rgba(0, 0, 0, 0.12);
 }
 
 .chips {

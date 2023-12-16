@@ -11,6 +11,9 @@
 			"showSpinner": false,
 			"splashFullScreen": false,
 			"splashImmersive": false
+		},
+		"CapacitorHttp": {
+			"enabled": true
 		}
 	},
 	"cordova": {}

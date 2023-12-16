@@ -1,40 +1,36 @@
 <template>
-<div id="container">
-  <strong>Messages</strong>
-  <p>Itchy can link to your Scratch account and let you view messages!</p>
-  <ion-button @click="openAuthWindow">Sign In</ion-button>
-</div>
+  <div id="container">
+    <strong>Messages</strong>
+    <p>Itchy can link to your Scratch account and let you view messages!</p>
+    <ion-button @click="openAuthWindow">Sign In</ion-button>
+  </div>
 </template>
 
 <script>
-import {
-  IonButton,
-  modalController
-} from '@ionic/vue';
-import AuthModal from './AuthModal.vue';
+import { IonButton, modalController } from "@ionic/vue";
+import AuthModal from "./AuthModal.vue";
 export default {
-  name: 'MessagesSignIn',
+  name: "MessagesSignIn",
   components: {
-    IonButton
+    IonButton,
   },
   props: {
     name: String,
-    message: String
+    message: String,
   },
   methods: {
     async openAuthWindow() {
-      const modal = await modalController
-        .create({
-          component: AuthModal,
-          cssClass: 'open-modal',
-          componentProps: {
-            mode: 'Login'
-          }
-        })
+      const modal = await modalController.create({
+        component: AuthModal,
+        cssClass: "open-modal",
+        componentProps: {
+          mode: "Login",
+        },
+      });
       return modal.present();
     },
-  }
-}
+  },
+};
 </script>
 
 <style scoped>

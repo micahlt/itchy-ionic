@@ -185,7 +185,7 @@
   </ion-item>
 </template>
 <script>
-import { Http } from "@capacitor-community/http";
+import { CapacitorCookies } from "@capacitor/core";
 import { Browser } from "@capacitor/browser";
 const friendlyTime = require("friendly-time");
 import UserModal from "./UserModal.vue";
@@ -329,24 +329,24 @@ export default defineComponent({
       session = JSON.parse(window.localStorage.getItem("session"));
       session.session = session.session.replace("\\", "");
       session.session = session.session.replace('"', "");
-      await Http.setCookie({
+      await CapacitorCookies.setCookie({
         url: "https://scratch.mit.edu",
         key: "scratchsessionsid",
         value: `"${session.session}"`,
       });
-      await Http.setCookie({
+      await CapacitorCookies.setCookie({
         url: "https://scratch.mit.edu",
         key: "scratchcsrftoken",
         value: "a",
       });
       console.log(
-        await Http.getCookies({
+        await CapacitorCookies.getCookies({
           url: "https://scratch.mit.edu",
         })
       );
       const reqOpts = {
         method: "PUT",
-        url: `https://scratch.mit.edu/site-api/users/followers/${o.actor_username}/add/?usernames=${session.username}`,
+        credentials: "include",
         headers: {
           "X-Requested-With": "XMLHttpRequest",
           Origin: "https://scratch.mit.edu",
@@ -367,10 +367,13 @@ export default defineComponent({
           credentials: "include",
         },
       };
-      const res = await Http.request(reqOpts);
-      await Http.request({
+      const res = await fetch(
+        `https://scratch.mit.edu/site-api/users/followers/${o.actor_username}/add/?usernames=${session.username}`,
+        reqOpts
+      );
+      await fetch(`https://scratch.mit.edu/csrf_token`, {
         method: "GET",
-        url: `https://scratch.mit.edu/csrf_token`,
+        credentials: "include",
         headers: {
           "X-Requested-With": "XMLHttpRequest",
           Origin: "https://scratch.mit.edu",
@@ -403,10 +406,9 @@ export default defineComponent({
         key: "scratchcsrftoken",
         value: "a",
       };
-      await Http.setCookie(cookieOpts);
+      await CapacitorCookies.setCookie(cookieOpts);
       const reqOpts = {
         method: "PUT",
-        url: `https://scratch.mit.edu/site-api/users/curators-in/${o.gallery_id}/add/?usernames=${session.username}`,
         headers: {
           "x-requested-with": "XMLHttpRequest",
           origin: "https://scratch.mit.edu/",
@@ -416,7 +418,10 @@ export default defineComponent({
           cookie: "scratchcsrftoken=a;",
         },
       };
-      const res = await Http.request(reqOpts);
+      const res = await fetch(
+        `https://scratch.mit.edu/site-api/users/curators-in/${o.gallery_id}/add/?usernames=${session.username}`,
+        reqOpts
+      );
       if (res.status == 200) {
         this.toastNotif(`You are a curator of ${o.title}`);
       } else {

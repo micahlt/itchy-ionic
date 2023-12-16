@@ -1,6 +1,7 @@
 <template>
   <ion-page>
     <ion-tabs>
+      <ion-router-outlet></ion-router-outlet>
       <ion-tab-bar slot="bottom">
         <ion-tab-button tab="tab1" href="/tabs/explore" @click="vibrate">
           <ion-icon :icon="earthOutline" />
@@ -32,7 +33,6 @@
 <script>
 import "@capacitor-community/http";
 import { Haptics, ImpactStyle } from "@capacitor/haptics";
-import { Http } from "@capacitor-community/http";
 import {
   IonTabBar,
   IonTabButton,
@@ -41,6 +41,7 @@ import {
   IonIcon,
   IonPage,
   IonBadge,
+  IonRouterOutlet,
 } from "@ionic/vue";
 import {
   earthOutline,
@@ -59,6 +60,7 @@ export default {
     IonIcon,
     IonPage,
     IonBadge,
+    IonRouterOutlet,
   },
   setup() {
     let userSignedIn, username;
@@ -85,12 +87,11 @@ export default {
   },
   created() {
     if (this.userSignedIn) {
-      Http.request({
-        method: "GET",
-        url: `https://api.scratch.mit.edu/users/${this.username}/messages/count`,
-      }).then((response) => {
-        this.messageCount = response.data.count;
-      });
+      fetch(`https://api.scratch.mit.edu/users/${this.username}/messages/count`)
+        .then((res) => res.json())
+        .then((data) => {
+          this.messageCount = data.count;
+        });
       window.setInterval(() => {
         this.refreshMessages();
       }, 15000);
@@ -105,12 +106,11 @@ export default {
       }
     },
     refreshMessages() {
-      Http.request({
-        method: "GET",
-        url: `https://api.scratch.mit.edu/users/${this.username}/messages/count`,
-      }).then((response) => {
-        this.messageCount = response.data.count;
-      });
+      fetch(`https://api.scratch.mit.edu/users/${this.username}/messages/count`)
+        .then((res) => res.json())
+        .then((data) => {
+          this.messageCount = data.count;
+        });
     },
   },
 };

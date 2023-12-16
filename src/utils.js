@@ -231,7 +231,7 @@ function getPrefs() {
     Object.keys(initialPrefs).forEach((pref) => {
       // https://stackoverflow.com/a/455340
       // - eslint did give an error when doing prefs.hasOwnProperty()
-      if (!(Object.prototype.hasOwnProperty.call(prefs, pref))) {
+      if (!Object.prototype.hasOwnProperty.call(prefs, pref)) {
         prefs[pref] = initialPrefs[pref];
       }
     });

@@ -22,7 +22,6 @@
 </template>
 
 <script>
-import { Http } from "@capacitor-community/http";
 import { App } from "@capacitor/app";
 import {
   IonCard,
@@ -89,20 +88,22 @@ export default defineComponent({
     },
     loadFeed(count) {
       this.loading = true;
-      Http.request({
-        method: "GET",
-        url: `https://api.scratch.mit.edu/users/${this.session.username}/following/users/activity?limit=${count}`,
-        headers: {
-          "X-Token": this.session.token,
-        },
-      }).then((response) => {
+      fetch(
+        `https://api.scratch.mit.edu/users/${this.session.username}/following/users/activity?limit=${count}`,
+        {
+          headers: {
+            "X-Token": this.session.token,
+          },
+        }
+      ).then(async (response) => {
         if (response.status == 200) {
           this.events = [];
-          response.data.forEach((item) => {
+          const data = await response.json();
+          data.forEach((item) => {
             item.datetime_created = friendlyTime(
               new Date(item.datetime_created)
             );
-            this.events.push(item);
+            this.events = [...this.events, item];
           });
           this.loading = false;
         }

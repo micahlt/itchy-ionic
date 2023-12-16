@@ -18,7 +18,6 @@
 </template>
 
 <script>
-import { Http } from "@capacitor-community/http";
 import { chevronDown } from "ionicons/icons";
 import { IonCard, IonCardContent, IonList, IonIcon } from "@ionic/vue";
 import { defineComponent } from "vue";
@@ -67,86 +66,102 @@ export default defineComponent({
     },
     loadFeed(count) {
       this.loading = true;
-      Http.request({
-        method: "GET",
-        url: `https://scratch.mit.edu/messages/ajax/user-activity/?user=${this.username}&max=${count}`,
-      }).then((res) => {
-        Http.request({
+      fetch(
+        `https://scratch.mit.edu/messages/ajax/user-activity/?user=${this.username}&max=${count}`,
+        {
           method: "GET",
-          url: `https://api.scratch.mit.edu/users/${this.username}`,
-        }).then((user) => {
-          let unparsed = res.data;
-          unparsed = parse(unparsed);
-          unparsed = unparsed.querySelectorAll("li");
-          this.loading = false;
-          for (let i = 0; i <= unparsed.length; i++) {
-            let obj = {};
-            const selected = unparsed[i].querySelector("div");
-            obj.actor_username = this.username;
-            obj.actor_id = user.data.id;
-            obj.datetime_created = unparsed[i].querySelector(".time").innerText;
-            switch (
-              selected.childNodes[2].innerText.replace(/\s+/g, " ").trim()
-            ) {
-              case "became a curator of": {
-                obj.type = "becomecurator";
-                obj.title = selected.childNodes[3].innerText;
-                break;
+        }
+      )
+        .then((res) => res.text())
+        .then((data) => {
+          fetch(`https://api.scratch.mit.edu/users/${this.username}`)
+            .then((res) => res.json())
+            .then(async (user) => {
+              let unparsed = data;
+              unparsed = parse(unparsed);
+              unparsed = unparsed.querySelectorAll("li");
+              this.loading = false;
+              for (let i = 0; i <= unparsed.length; i++) {
+                let obj = {};
+                if (unparsed[i]) {
+                  const selected = unparsed[i].querySelector("div");
+                  obj.actor_username = this.username;
+                  obj.actor_id = user.id;
+                  obj.datetime_created =
+                    unparsed[i].querySelector(".time").innerText;
+                  switch (
+                    selected.childNodes[2].innerText.replace(/\s+/g, " ").trim()
+                  ) {
+                    case "became a curator of": {
+                      obj.type = "becomecurator";
+                      obj.title = selected.childNodes[3].innerText;
+                      break;
+                    }
+                    case "added": {
+                      obj.type = "addproject";
+                      obj.title = selected.childNodes[3].innerText;
+                      obj.project_id = Number(
+                        selected.childNodes[3]
+                          .getAttribute("href")
+                          .split("/")[2]
+                      );
+                      obj.gallery_title = selected.childNodes[5].innerText;
+                      break;
+                    }
+                    case "shared the project": {
+                      obj.type = "shareproject";
+                      obj.title = selected.childNodes[3].innerText;
+                      obj.project_id = Number(
+                        selected.childNodes[3]
+                          .getAttribute("href")
+                          .split("/")[2]
+                      );
+                      break;
+                    }
+                    case "loved": {
+                      obj.type = "loveproject";
+                      obj.title = selected.childNodes[3].innerText;
+                      obj.project_id = Number(
+                        selected.childNodes[3]
+                          .getAttribute("href")
+                          .split("/")[2]
+                      );
+                      break;
+                    }
+                    case "favorited": {
+                      obj.type = "favoriteproject";
+                      obj.project_title = selected.childNodes[3].innerText;
+                      obj.project_id = Number(
+                        selected.childNodes[3]
+                          .getAttribute("href")
+                          .split("/")[2]
+                      );
+                      break;
+                    }
+                    case "is now following": {
+                      obj.type = "followuser";
+                      obj.followed_username = selected.childNodes[3].innerText;
+                      break;
+                    }
+                    case "was promoted to manager of": {
+                      obj.type = "becomeownerstudio";
+                      obj.recipient_id = obj.actor_id;
+                      obj.recipient_username = this.username;
+                      delete obj.actor_id;
+                      delete obj.actor_username;
+                      obj.gallery_title = selected.childNodes[3].innerText;
+                      obj.gallery_id = Number(
+                        selected.childNodes[3]
+                          .getAttribute("href")
+                          .split("/")[2]
+                      );
+                    }
+                  }
+                  this.events.push(obj);
+                }
               }
-              case "added": {
-                obj.type = "addproject";
-                obj.title = selected.childNodes[3].innerText;
-                obj.project_id = Number(
-                  selected.childNodes[3].getAttribute("href").split("/")[2]
-                );
-                obj.gallery_title = selected.childNodes[5].innerText;
-                break;
-              }
-              case "shared the project": {
-                obj.type = "shareproject";
-                obj.title = selected.childNodes[3].innerText;
-                obj.project_id = Number(
-                  selected.childNodes[3].getAttribute("href").split("/")[2]
-                );
-                break;
-              }
-              case "loved": {
-                obj.type = "loveproject";
-                obj.title = selected.childNodes[3].innerText;
-                obj.project_id = Number(
-                  selected.childNodes[3].getAttribute("href").split("/")[2]
-                );
-                break;
-              }
-              case "favorited": {
-                obj.type = "favoriteproject";
-                obj.project_title = selected.childNodes[3].innerText;
-                obj.project_id = Number(
-                  selected.childNodes[3].getAttribute("href").split("/")[2]
-                );
-                break;
-              }
-              case "is now following": {
-                obj.type = "followuser";
-                obj.followed_username = selected.childNodes[3].innerText;
-                break;
-              }
-              case "was promoted to manager of": {
-                obj.type = "becomeownerstudio";
-                obj.recipient_id = obj.actor_id;
-                obj.recipient_username = this.username;
-                delete obj.actor_id;
-                delete obj.actor_username;
-                obj.gallery_title = selected.childNodes[3].innerText;
-                obj.gallery_id = Number(
-                  selected.childNodes[3].getAttribute("href").split("/")[2]
-                );
-              }
-            }
-            this.events.push(obj);
-          }
+            });
         });
-      });
     },
     visit(i) {
       const projectLinks = [

@@ -86,7 +86,6 @@
 </template>
 
 <script>
-import { Http } from "@capacitor-community/http";
 import { App } from "@capacitor/app";
 const utils = require("../utils.js");
 const friendlyTime = require("friendly-time");
@@ -166,37 +165,39 @@ export default defineComponent({
       modalController.dismiss();
     },
     loadComments(event) {
-      Http.request({
-        method: "GET",
-        url: `https://api.scratch.mit.edu/users/${this.author}/projects/${this.id}/comments?offset=${this.offset}`,
-      }).then((res) => {
-        // const mentionRegex = /@(-?_?[A-Z]?[a-z]?[0-9]?)+/g;
-        res.data.forEach((comment) => {
-          comment.datetime_created = friendlyTime(
-            new Date(comment.datetime_created)
-          );
-          comment.replies = [];
-          if (comment.reply_count > 0) {
-            Http.request({
-              method: "GET",
-              url: `https://api.scratch.mit.edu/users/${this.author}/projects/${this.id}/comments/${comment.id}/replies`,
-            }).then((response) => {
-              response.data.forEach((reply) => {
-                reply.datetime_created = friendlyTime(
-                  new Date(reply.datetime_created)
-                );
-                comment.replies.push(reply);
-              });
-            });
+      fetch(
+        `https://api.scratch.mit.edu/users/${this.author}/projects/${this.id}/comments?offset=${this.offset}`
+      )
+        .then((res) => res.json())
+        .then((data) => {
+          // const mentionRegex = /@(-?_?[A-Z]?[a-z]?[0-9]?)+/g;
+          data.forEach((comment) => {
+            comment.datetime_created = friendlyTime(
+              new Date(comment.datetime_created)
+            );
+            comment.replies = [];
+            if (comment.reply_count > 0) {
+              fetch(
+                `https://api.scratch.mit.edu/users/${this.author}/projects/${this.id}/comments/${comment.id}/replies`
+              )
+                .then((res) => res.json())
+                .then((data2) => {
+                  data2.forEach((reply) => {
+                    reply.datetime_created = friendlyTime(
+                      new Date(reply.datetime_created)
+                    );
+                    comment.replies.push(reply);
+                  });
+                });
+            }
+            this.comments.push(comment);
+          });
+          this.loading = false;
+          this.offset += data.length;
+          if (event) {
+            event.target.complete();
           }
-          this.comments.push(comment);
         });
-        this.loading = false;
-        this.offset += res.data.length;
-        if (event) {
-          event.target.complete();
-        }
-      });
     },
     async openUser(name) {
       if (name == this.title) {

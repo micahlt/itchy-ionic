@@ -148,7 +148,6 @@ import UserComments from "@/components/UserComments.vue";
 import UserFeed from "@/components/UserFeed.vue";
 import Error from "./Error.vue";
 //import * as Vibrant from 'node-vibrant';
-import { Http } from "@capacitor-community/http";
 // import { App } from "@capacitor/app";
 import { StatusBar } from "@capacitor/status-bar";
 import { Browser } from "@capacitor/browser";
@@ -336,66 +335,59 @@ export default defineComponent({
         }
         isLoading();
       };
-      Http.request({
-        method: "GET",
-        url: `https://scratch.mit.edu/site-api/users/all/${this.username}`,
-      }).then((res) => {
-        handleError(res.status);
-        this.featuredProject = {
-          label: res.data.featured_project_label_name,
-          author: res.data.featured_project_data.creator,
-          title: res.data.featured_project_data.title,
-          thumbnail: res.data.featured_project_data.thumbnail_url,
-          id: res.data.featured_project_data.id,
-        };
-      });
-      Http.request({
-        method: "GET",
-        url: `https://api.scratch.mit.edu/users/${this.username}/favorites?limit=12`,
-      }).then((res) => {
+      fetch(`https://scratch.mit.edu/site-api/users/all/${this.username}`).then(
+        async (res) => {
+          handleError(res.status);
+          const data = await res.json();
+          this.featuredProject = {
+            label: data.featured_project_label_name,
+            author: data.featured_project_data.creator,
+            title: data.featured_project_data.title,
+            thumbnail: data.featured_project_data.thumbnail_url,
+            id: data.featured_project_data.id,
+          };
+        }
+      );
+      fetch(
+        `https://api.scratch.mit.edu/users/${this.username}/favorites?limit=12`
+      ).then(async (res) => {
         handleError(res.status);
         this.loadingStatus++;
-        res.data.forEach((project) => {
-          Http.request({
-            method: "GET",
-            url: `https://api.scratch.mit.edu/projects/${project.id}`,
-          }).then((res) => {
-            if (!res.error) {
-              project.author.username = res.data.author.username;
-              this.favoriteProjects.push(project);
-            }
-          });
+        const data = await res.json();
+        data.forEach((project) => {
+          fetch(`https://api.scratch.mit.edu/projects/${project.id}`)
+            .then((res) => res.json())
+            .then((data) => {
+              if (data.author) {
+                project.author.username = data.author.username;
+                this.favoriteProjects.push(project);
+              }
+            });
         });
         this.loadingStatus++;
         isLoading();
       });
-      Http.request({
-        method: "GET",
-        url: `https://itchy-api.vercel.app/api/user?user=${this.username}`,
-      }).then((res) => {
-        handleError(res.status);
-        this.loadingStatus++;
-        isLoading();
-        user = res.data;
-        this.bio.about = user.profile.bio;
-        this.bio.wiwo = user.profile.status;
-        this.projectCount = utils.formatNumber(user.projectCount);
-        let fake = document.createElement("img");
-        fake.src = `https://cdn2.scratch.mit.edu/get_image/user/${user.id}_500x500.png`;
-        Http.request({
-          method: "GET",
-          url: `https://api.scratch.mit.edu/users/${this.username}/projects`,
-        }).then((res) => {
-          this.userProjects = res.data;
+      fetch(`https://itchy-api.vercel.app/api/user?user=${this.username}`).then(
+        async (res) => {
+          handleError(res.status);
           this.loadingStatus++;
           isLoading();
-        });
-        fake.onload = () => {
-          /*
-          Http.request({
-            method: 'GET',
-            url: `https://itchy-api.vercel.app/api/image?url=https://cdn2.scratch.mit.edu/get_image/user/${userStats.id}_500x500.png`
-          }).then((img) => {
+          user = await res.json();
+          this.bio.about = user.profile.bio;
+          this.bio.wiwo = user.profile.status;
+          this.projectCount = utils.formatNumber(user.projectCount);
+          let fake = document.createElement("img");
+          fake.src = `https://cdn2.scratch.mit.edu/get_image/user/${user.id}_500x500.png`;
+          fetch(`https://api.scratch.mit.edu/users/${this.username}/projects`)
+            .then((res) => res.json())
+            .then((data) => {
+              this.userProjects = data;
+              this.loadingStatus++;
+              isLoading();
+            });
+          fake.onload = () => {
+            /*
+          fetch(`https://itchy-api.vercel.app/api/image?url=https://cdn2.scratch.mit.edu/get_image/user/${userStats.id}_500x500.png`).then((img) => {
             let image = new Image();
             image.src = `data:image/png;base64,${img.data.data}`;
             let v = new Vibrant(image.src);
@@ -409,19 +401,20 @@ export default defineComponent({
               });
               this.bio.wiwo = userStats.work;
               this.bio.about = userStats.bio;*/
-          this.pfp = `https://cdn2.scratch.mit.edu/get_image/user/${user.id}_500x500.png`;
-          this.loadingStatus++;
-          isLoading();
-          /*});
+            this.pfp = `https://cdn2.scratch.mit.edu/get_image/user/${user.id}_500x500.png`;
+            this.loadingStatus++;
+            isLoading();
+            /*});
           })*/
-        };
-        this.joinDate = utils.formatDate(user.history.joined);
-        if (user.followers) {
-          this.followers = utils.formatNumber(user.followers);
-        } else {
-          this.followers = "dontshow";
+          };
+          this.joinDate = utils.formatDate(user.history.joined);
+          if (user.followers) {
+            this.followers = utils.formatNumber(user.followers);
+          } else {
+            this.followers = "dontshow";
+          }
         }
-      });
+      );
     },
     async openInBrowser() {
       this.opening = true;
@@ -495,7 +488,8 @@ ion-card-title {
   outline: 3px solid transparent;
   outline-offset: 5px;
   */
-  box-shadow: 0.4px 6.7px 5.3px -7px rgba(0, 0, 0, 0.028),
+  box-shadow:
+    0.4px 6.7px 5.3px -7px rgba(0, 0, 0, 0.028),
     1.3px 22.3px 17.9px -7px rgba(0, 0, 0, 0.042),
     6px 100px 80px -7px rgba(0, 0, 0, 0.07);
   transform: translate(0);

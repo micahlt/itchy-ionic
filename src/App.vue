@@ -1,13 +1,11 @@
 <template>
   <ion-app>
-    <ion-router-outlet
-      :class="themeClass"
-    />
+    <ion-router-outlet :class="themeClass" />
   </ion-app>
 </template>
 
 <script>
-const themeClasses = {"light": "light", "dark": "dark"};
+const themeClasses = { light: "light", dark: "dark" };
 const utils = require("./utils.js");
 import { isPlatform } from "@ionic/vue";
 import {
@@ -17,7 +15,6 @@ import {
   modalController,
 } from "@ionic/vue";
 import { StatusBar } from "@capacitor/status-bar";
-import { Http } from "@capacitor-community/http";
 import { LocalNotifications } from "@capacitor/local-notifications";
 import UserModal from "@/components/UserModal.vue";
 import ProjectModal from "@/components/ProjectModal.vue";
@@ -37,7 +34,7 @@ export default defineComponent({
     } else {
       userSignedIn = false;
     }
-    
+
     themeClass = this.getThemeClass();
     this.updateTheme(themeClass);
 
@@ -48,11 +45,11 @@ export default defineComponent({
     };
   },
   created() {
-    //StatusBar.setOverlaysWebView({ overlay: true });
-    StatusBar.setBackgroundColor({
-      color: "#121212",
-    });
+    // StatusBar.setOverlaysWebView({ overlay: true });
     if (isPlatform("android")) {
+      StatusBar.setBackgroundColor({
+        color: "#121212",
+      });
       try {
         window.plugins.intentShim.onIntent(function (intent) {
           if (intent.data) {
@@ -76,23 +73,24 @@ export default defineComponent({
       });
       LocalNotifications.addListener("localNotificationReceived", (notif) => {
         if (notif.id == 1) {
-          Http.request({
-            method: "GET",
-            url: `https://api.scratch.mit.edu/users/${this.username}/messages/count`,
-          }).then((response) => {
-            if (response.data.count > 0) {
-              LocalNotifications.schedule({
-                notifications: [
-                  {
-                    title: `${response.data.count} unread messages`,
-                    body: "You have new messages on Scratch",
-                    id: 2,
-                    smallIcon: "ic_notif",
-                  },
-                ],
-              });
-            }
-          });
+          fetch(
+            `https://api.scratch.mit.edu/users/${this.username}/messages/count`
+          )
+            .then((res) => res.json())
+            .then((data) => {
+              if (data.count > 0) {
+                LocalNotifications.schedule({
+                  notifications: [
+                    {
+                      title: `${data.data.count} unread messages`,
+                      body: "You have new messages on Scratch",
+                      id: 2,
+                      smallIcon: "ic_notif",
+                    },
+                  ],
+                });
+              }
+            });
           LocalNotifications.cancel({
             notifications: [
               {
@@ -111,8 +109,7 @@ export default defineComponent({
 
       if (themeClasses[prefs?.theme]) {
         return themeClasses[prefs?.theme];
-      }
-      else {
+      } else {
         return "system";
       }
     },

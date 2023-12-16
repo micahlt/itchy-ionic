@@ -62,7 +62,7 @@
 </template>
 
 <script>
-import { Http } from "@capacitor-community/http";
+import { CapacitorCookies } from "@capacitor/core";
 const utils = require("../utils.js");
 import Message from "@/components/Message.vue";
 import {
@@ -134,47 +134,55 @@ export default {
         return 0;
       }
       if (this.session) {
-        const response = await Http.request({
-          method: "GET",
-          url: `https://api.scratch.mit.edu/users/${
+        const response = await fetch(
+          `https://api.scratch.mit.edu/users/${
             this.session.username
           }/messages?offset=${offset || 0}`,
-          headers: {
-            "x-requested-with": "XMLHttpRequest",
-            origin: "https://scratch.mit.edu/",
-            referer: `https://scratch.mit.edu/`,
-            "x-token": this.session.token,
-          },
-        });
-        let messages = await response.data;
+          {
+            method: "GET",
+            headers: {
+              "x-requested-with": "XMLHttpRequest",
+              origin: "https://scratch.mit.edu/",
+              referer: `https://scratch.mit.edu/`,
+              "x-token": this.session.token,
+            },
+          }
+        );
+        let messages = await response.json();
         if (reset) {
           this.messages = [];
         }
-        const count = await Http.request({
-          method: "GET",
-          url: `https://api.scratch.mit.edu/users/${this.session.username}/messages/count`,
-          headers: {
-            "x-requested-with": "XMLHttpRequest",
-          },
-        });
+        const countReq = await fetch(
+          `https://api.scratch.mit.edu/users/${this.session.username}/messages/count`,
+          {
+            method: "GET",
+            headers: {
+              "x-requested-with": "XMLHttpRequest",
+            },
+          }
+        );
 
-        const adminMessages = await Http.request({
-          method: "GET",
-          url: `https://api.scratch.mit.edu/users/${this.session.username}/messages/admin`,
-          headers: {
-            "x-requested-with": "XMLHttpRequest",
-            origin: "https://scratch.mit.edu/",
-            referer: `https://scratch.mit.edu/`,
-            "x-token": this.session.token,
-          },
-        });
+        const adminMessagesReq = await fetch(
+          `https://api.scratch.mit.edu/users/${this.session.username}/messages/admin`,
+          {
+            method: "GET",
+            headers: {
+              "x-requested-with": "XMLHttpRequest",
+              origin: "https://scratch.mit.edu/",
+              referer: `https://scratch.mit.edu/`,
+              "x-token": this.session.token,
+            },
+          }
+        );
+
         this.adminMessages = [];
-        await adminMessages.data.forEach((message) => {
+        const adminMessages = await adminMessagesReq.json();
+        await adminMessages.forEach((message) => {
           message.type = "admin";
           this.adminMessages.push(message);
         });
-        this.messageCount =
-          (await count.data.count) - this.adminMessages.length;
+        const { count } = await countReq.json();
+        this.messageCount = count - this.adminMessages.length;
         messages.forEach((m) => {
           if (m.comment_fragment) {
             //eslint-disable-next-line
@@ -212,33 +220,32 @@ export default {
       }
     },
     markAsRead() {
-      Http.request({
-        method: "GET",
-        url: "https://itchy-api.vercel.app/api/csrf",
-      }).then((token) => {
+      fetch("https://itchy-api.vercel.app/api/csrf").then((token) => {
         token = token.data;
-        Http.setCookie({
+        CapacitorCookies.setCookie({
           url: "scratch.mit.edu",
           key: "scratchsessionsid",
           value:
             '".eJxVUEFugzAQ_IvPCcUYsJMbzaWnSI2qVj2hxV7AkNgITKO26t-7lrjktprZmZ3ZX7YuODu4ITuyfTXr3rs927Ea1tDXkautISrnGS-llEQFXIL2frRRcvfziOZR0IAe0UVVxNAFqyFY75KNWJILTtcNfN6WydfTQCLUedZAnpqSJgklHGQh2jJPVarUQRyOJ1HJ09sEX99h0OEynHVRvbzO_fvHnWyuvrNubydy4iIpyoQXRZIJETNewXUrdDE4ndoxMxDg62Bv-ONdhKsbzpTs6Yz3-pO6PTbrYelpKeP0DgFYKFCtRoOyFblOM8N5I0qFQhvJpVLs7x9aonDA:1mvq2n:ZdhLIy6HClCUD55nHvh2jdFjXJA"',
         }).then(() => {
-          Http.request({
-            method: "POST",
-            url: "https://scratch.mit.edu/site-api/messages/messages-clear/?sareferer",
-            headers: {
-              "x-requested-with": "XMLHttpRequest",
-              origin: "https://scratch.mit.edu/",
-              referer: `https://scratch.mit.edu/messages`,
-              "x-token": this.session.token,
-              "x-csrftoken": token.replace(/(\r\n|\n|\r)/gm, ""),
-              Cookie:
-                `scratchlanguage=en; scratchcsrftoken=${token}; scratchsessionsid=".eJxVUEFugzAQ_IvPCcUYsJMbzaWnSI2qVj2hxV7AkNgITKO26t-7lrjktprZmZ3ZX7YuODu4ITuyfTXr3rs927Ea1tDXkautISrnGS-llEQFXIL2frRRcvfziOZR0IAe0UVVxNAFqyFY75KNWJILTtcNfN6WydfTQCLUedZAnpqSJgklHGQh2jJPVarUQRyOJ1HJ09sEX99h0OEynHVRvbzO_fvHnWyuvrNubydy4iIpyoQXRZIJETNewXUrdDE4ndoxMxDg62Bv-ONdhKsbzpTs6Yz3-pO6PTbrYelpKeP0DgFYKFCtRoOyFblOM8N5I0qFQhvJpVLs7x9aonDA:1mvq2n:ZdhLIy6HClCUD55nHvh2jdFjXJA"`.replace(
-                  /(\r\n|\n|\r)/gm,
-                  ""
-                ),
-            },
-          });
+          fetch(
+            "https://scratch.mit.edu/site-api/messages/messages-clear/?sareferer",
+            {
+              method: "POST",
+              headers: {
+                "x-requested-with": "XMLHttpRequest",
+                origin: "https://scratch.mit.edu/",
+                referer: `https://scratch.mit.edu/messages`,
+                "x-token": this.session.token,
+                "x-csrftoken": token.replace(/(\r\n|\n|\r)/gm, ""),
+                Cookie:
+                  `scratchlanguage=en; scratchcsrftoken=${token}; scratchsessionsid=".eJxVUEFugzAQ_IvPCcUYsJMbzaWnSI2qVj2hxV7AkNgITKO26t-7lrjktprZmZ3ZX7YuODu4ITuyfTXr3rs927Ea1tDXkautISrnGS-llEQFXIL2frRRcvfziOZR0IAe0UVVxNAFqyFY75KNWJILTtcNfN6WydfTQCLUedZAnpqSJgklHGQh2jJPVarUQRyOJ1HJ09sEX99h0OEynHVRvbzO_fvHnWyuvrNubydy4iIpyoQXRZIJETNewXUrdDE4ndoxMxDg62Bv-ONdhKsbzpTs6Yz3-pO6PTbrYelpKeP0DgFYKFCtRoOyFblOM8N5I0qFQhvJpVLs7x9aonDA:1mvq2n:ZdhLIy6HClCUD55nHvh2jdFjXJA"`.replace(
+                    /(\r\n|\n|\r)/gm,
+                    ""
+                  ),
+              },
+            }
+          );
         });
       });
     },

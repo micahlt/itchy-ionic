@@ -94,7 +94,7 @@ import {
 } from "@ionic/vue";
 import { lockClosed, personCircleOutline } from "ionicons/icons";
 import { Browser } from "@capacitor/browser";
-import { Storage } from "@capacitor/storage";
+import { Preferences } from "@capacitor/preferences";
 import { defineComponent } from "vue";
 export default defineComponent({
   name: "AuthModal",
@@ -170,7 +170,7 @@ export default defineComponent({
         if (response.status == 200) {
           let json = await response.json();
           window.localStorage.setItem("session", JSON.stringify(json));
-          await Storage.set({
+          await Preferences.set({
             key: "username",
             value: username,
           });

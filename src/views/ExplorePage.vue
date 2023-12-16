@@ -115,7 +115,7 @@
           :key="user.id"
           :id="user.id"
           :name="user.username"
-          :followers="user.count"
+          :followers="user.statistics.followers"
         />
       </div>
     </ion-content>
@@ -124,7 +124,6 @@
 
 <script>
 import LongPress from "vue-directive-long-press";
-import { Http } from "@capacitor-community/http";
 const utils = require("../utils.js");
 import {
   IonProgressBar,
@@ -260,39 +259,40 @@ export default {
       if (window.localStorage.getItem("session")) {
         this.$refs.feed.loadFeed(4);
       }
-      Http.request({
-        method: "GET",
-        url: "https://api.scratch.mit.edu/proxy/featured",
-      }).then((response) => {
-        if (response.status == 200) {
-          response.data = JSON.parse(response.data);
-          console.log("FEATURED", response.data.community_featured_projects);
-          this.featuredProjects = response.data.community_featured_projects;
-          this.lovedProjects = response.data.community_most_loved_projects;
-          this.remixedProjects = response.data.community_most_remixed_projects;
-          this.curatedProjects = response.data.curator_top_projects;
-          this.loaded = true;
-        } else {
-          this.presentAlert(
-            response.status,
-            "",
-            "We encountered an error while fetching data."
-          );
-        }
-      });
-      if (this.session && this.prefs.enableFeed) {
-        Http.request({
-          method: "GET",
-          url: `https://api.scratch.mit.edu/users/${this.session.username}/following/users/loves`,
-          headers: {
-            "x-requested-with": "XMLHttpRequest",
-            origin: "https://scratch.mit.edu/",
-            referer: `https://scratch.mit.edu/`,
-            "x-token": this.session.token,
-          },
-        }).then((response) => {
+      fetch("https://api.scratch.mit.edu/proxy/featured").then(
+        async (response) => {
           if (response.status == 200) {
-            this.followingLovedProjects = response.data;
+            let data = await response.json();
+            this.featuredProjects = data.community_featured_projects;
+            this.lovedProjects = data.community_most_loved_projects;
+            this.remixedProjects = data.community_most_remixed_projects;
+            this.curatedProjects = data.curator_top_projects;
+            this.loaded = true;
+          } else {
+            this.presentAlert(
+              response.status,
+              "",
+              "We encountered an error while fetching data."
+            );
+          }
+        }
+      );
+      if (this.session && this.prefs.enableFeed) {
+        fetch(
+          `https://api.scratch.mit.edu/users/${this.session.username}/following/users/loves`,
+          {
+            method: "GET",
+            url: `https://api.scratch.mit.edu/users/${this.session.username}/following/users/loves`,
+            headers: {
+              "x-requested-with": "XMLHttpRequest",
+              origin: "https://scratch.mit.edu/",
+              referer: `https://scratch.mit.edu/`,
+              "x-token": this.session.token,
+            },
+          }
+        ).then(async (response) => {
+          if (response.status == 200) {
+            this.followingLovedProjects = await response.json();
           } else {
             this.presentAlert(
               response.status,
@@ -302,25 +302,19 @@ export default {
           }
         });
       }
-      Http.request({
-        method: "GET",
-        url: "https://scratchstats.com/api2/scratchdb/topusers/followers?country=global&page=0",
-        headers: {
-          Referer: "https://scratchstats.com/",
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.99 Safari/537.36",
-        },
-      }).then((res) => {
-        if (res.status == 200) {
-          this.topUsers = res.data;
-        } else {
-          this.presentAlert(
-            res.status,
-            "",
-            "We encountered an error while fetching some data."
-          );
+      fetch("https://scratchdb.lefty.one/v3/user/rank/global/followers/0").then(
+        async (res) => {
+          if (res.status == 200) {
+            this.topUsers = await res.json();
+          } else {
+            this.presentAlert(
+              res.status,
+              "",
+              "We encountered an error while fetching some data."
+            );
+          }
         }
-      });
+      );
       if (event) {
         event.target.complete();
       }

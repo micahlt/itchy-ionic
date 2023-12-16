@@ -84,7 +84,6 @@
 </template>
 
 <script>
-import { Http } from "@capacitor-community/http";
 import { App } from "@capacitor/app";
 const utils = require("../utils.js");
 const friendlyTime = require("friendly-time");
@@ -158,10 +157,9 @@ export default defineComponent({
     },
     loadComments(event) {
       if (this.type == "user") {
-        Http.request({
-          method: "GET",
-          url: `https://itchy-api.vercel.app/api/user?user=${this.title}&comments=true&commentoffset=${this.offset}`,
-        }).then((res) => {
+        fetch(
+          `https://itchy-api.vercel.app/api/user?user=${this.title}&comments=true&commentoffset=${this.offset}`
+        ).then((res) => {
           // const mentionRegex = /@(-?_?[A-Z]?[a-z]?[0-9]?)+/g;
           res.data.forEach((comment) => {
             comment.timestamp = friendlyTime(new Date(comment.timestamp));

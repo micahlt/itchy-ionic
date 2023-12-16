@@ -99,7 +99,7 @@ import {
 } from "@ionic/vue";
 import { getPrefs } from "../utils.js";
 import { caretDown } from "ionicons/icons";
-import { Storage } from "@capacitor/storage";
+import { Preferences } from "@capacitor/preferences";
 import AuthModal from "../components/AuthModal.vue";
 import UserModal from "../components/UserModal.vue";
 import DarkModeToggle from "../components/DarkModeToggle.vue";
@@ -177,7 +177,7 @@ export default {
     },
     async signOut() {
       window.localStorage.removeItem("session");
-      await Storage.clear();
+      await Preferences.clear();
       window.location.reload();
     },
     toggle(setting) {
