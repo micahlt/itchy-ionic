@@ -39,18 +39,20 @@
           /></a>
         </ion-item>
         <ion-item>
-          <ion-label>Tab vibration</ion-label>
           <ion-toggle
             :checked="prefs.haptics"
             @ionChange="toggle('haptics')"
-          ></ion-toggle>
+            label-placement="end"
+            >Tab vibration</ion-toggle
+          >
         </ion-item>
         <ion-item>
-          <ion-label>Enable personal data on Explore</ion-label>
           <ion-toggle
             :checked="prefs.enableFeed"
             @ionChange="toggle('enableFeed')"
-          ></ion-toggle>
+            label-placement="end"
+            >Enable personal data on Explore</ion-toggle
+          >
         </ion-item>
         <ion-item-divider>
           <ion-label>About</ion-label>

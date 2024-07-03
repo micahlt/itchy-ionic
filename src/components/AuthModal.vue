@@ -25,16 +25,22 @@
           </ion-row>
         </ion-grid>
         <ion-item>
-          <ion-label position="floating">Scratch Username</ion-label>
-          <ion-input type="text" required v-model="username"></ion-input>
+          <ion-input
+            type="text"
+            required
+            v-model="username"
+            label="Scratch Username"
+            label-placement="floating"
+          ></ion-input>
         </ion-item>
         <ion-item>
-          <ion-label position="floating">Password</ion-label>
           <ion-input
             type="password"
             required
             v-model="password"
             @keyup.enter="logIn"
+            label="Password"
+            label-placement="floating"
           ></ion-input>
         </ion-item>
         <ion-grid>

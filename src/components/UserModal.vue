@@ -488,8 +488,7 @@ ion-card-title {
   outline: 3px solid transparent;
   outline-offset: 5px;
   */
-  box-shadow:
-    0.4px 6.7px 5.3px -7px rgba(0, 0, 0, 0.028),
+  box-shadow: 0.4px 6.7px 5.3px -7px rgba(0, 0, 0, 0.028),
     1.3px 22.3px 17.9px -7px rgba(0, 0, 0, 0.042),
     6px 100px 80px -7px rgba(0, 0, 0, 0.07);
   transform: translate(0);
