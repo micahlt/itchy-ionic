@@ -338,6 +338,7 @@ export default defineComponent({
       fetch(`https://scratch.mit.edu/site-api/users/all/${this.username}`).then(
         async (res) => {
           handleError(res.status);
+          console.log(res);
           const data = await res.json();
           this.featuredProject = {
             label: data.featured_project_label_name,
@@ -346,6 +347,7 @@ export default defineComponent({
             thumbnail: data.featured_project_data.thumbnail_url,
             id: data.featured_project_data.id,
           };
+          isLoading();
         }
       );
       fetch(

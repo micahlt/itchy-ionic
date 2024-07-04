@@ -105,6 +105,7 @@ import { Preferences } from "@capacitor/preferences";
 import AuthModal from "../components/AuthModal.vue";
 import UserModal from "../components/UserModal.vue";
 import DarkModeToggle from "../components/DarkModeToggle.vue";
+import { version } from "../../package.json";
 export default {
   name: "SettingsPage",
   components: {
@@ -124,7 +125,7 @@ export default {
   },
   data() {
     return {
-      version: "0.9.10",
+      version,
       caretDown,
     };
   },
