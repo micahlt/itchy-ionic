@@ -302,19 +302,19 @@ export default {
           }
         });
       }
-      fetch("https://scratchdb.lefty.one/v3/user/rank/global/followers/0").then(
-        async (res) => {
-          if (res.status == 200) {
-            this.topUsers = await res.json();
-          } else {
-            this.presentAlert(
-              res.status,
-              "",
-              "We encountered an error while fetching some data."
-            );
-          }
-        }
-      );
+      // fetch("https://scratchdb.lefty.one/v3/user/rank/global/followers/0").then(
+      //   async (res) => {
+      //     if (res.status == 200) {
+      //       this.topUsers = await res.json();
+      //     } else {
+      //       this.presentAlert(
+      //         res.status,
+      //         "",
+      //         "We encountered an error while fetching some data."
+      //       );
+      //     }
+      //   }
+      // );
       if (event) {
         event.target.complete();
       }
